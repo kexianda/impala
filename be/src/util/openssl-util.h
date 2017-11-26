@@ -19,6 +19,7 @@
 #define IMPALA_UTIL_OPENSSL_UTIL_H
 
 #include <openssl/aes.h>
+#include <openssl/evp.h>
 #include <openssl/sha.h>
 
 #include "common/status.h"
@@ -47,7 +48,7 @@ class IntegrityHash {
 /// The key and initialization vector (IV) required to encrypt and decrypt a buffer of
 /// data. This should be regenerated for each buffer of data.
 ///
-/// We use AES with a 256-bit key and CFB cipher block mode, which gives us a stream
+/// We use AES with a 256-bit key and CTR/CFB cipher block mode, which gives us a stream
 /// cipher that can support arbitrary-length ciphertexts. The IV is used as an input to
 /// the cipher as the "block to supply before the first block of plaintext". This is
 /// required because all ciphers (except the weak ECB) are built such that each block
@@ -59,8 +60,8 @@ class EncryptionKey {
   EncryptionKey() : initialized_(false) {}
 
   /// Initialize a key for temporary use with randomly generated data. Reinitializes with
-  /// new random values if the key was already initialized. We use AES-CFB mode so key/IV
-  /// pairs should not be reused. This function automatically reseeds the RNG
+  /// new random values if the key was already initialized. We use AES-CTR/AES-CFB mode
+  /// so key/IV pairs should not be reused. This function automatically reseeds the RNG
   /// periodically, so callers do not need to do it.
   void InitializeRandom();
 
@@ -87,6 +88,9 @@ class EncryptionKey {
   /// Track whether this key has been initialized, to avoid accidentally using
   /// uninitialized keys.
   bool initialized_;
+
+  /// return AES-256-CFB cipher if supported, otherwise AES-256-CFB cipher
+  const EVP_CIPHER* getCipher() const;
 
   /// An AES 256-bit key.
   uint8_t key_[32];
