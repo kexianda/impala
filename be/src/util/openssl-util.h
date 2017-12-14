@@ -30,6 +30,12 @@ namespace impala {
 /// and again periodically to add new entropy.
 void SeedOpenSSLRNG();
 
+enum AES_CIPHER_MODE {
+  AES_256_CTR,
+  AES_256_CFB,
+  AES_256_GCM // not supported now.
+};
+
 /// The hash of a data buffer used for checking integrity. A SHA256 hash is used
 /// internally.
 class IntegrityHash {
@@ -57,7 +63,7 @@ class IntegrityHash {
 /// encryption.
 class EncryptionKey {
  public:
-  EncryptionKey() : initialized_(false) {}
+  EncryptionKey() : initialized_(false), mode_(AES_256_CTR) {}
 
   /// Initialize a key for temporary use with randomly generated data. Reinitializes with
   /// new random values if the key was already initialized. We use AES-CTR/AES-CFB mode
@@ -75,6 +81,12 @@ class EncryptionKey {
   /// This key must be initialized before calling. Operates in-place if 'in' == 'out',
   /// otherwise the buffers must not overlap.
   Status Decrypt(const uint8_t* data, int64_t len, uint8_t* out) const WARN_UNUSED_RESULT;
+
+  /// By default it is AES_256_CTR, if CTR is not support, fallback to CFB mode.
+  /// provide flexibility, we can specify a mode for testing,
+  /// or in future we can provide a configuration option for the user who
+  /// can choose a mode(CFB,CTR,GCM...) based on their software/hardware.
+  void setCipherMode(AES_CIPHER_MODE m) { mode_ = m; }
 
  private:
   /// Helper method that encrypts/decrypts if 'encrypt' is true/false respectively.
@@ -97,6 +109,8 @@ class EncryptionKey {
 
   /// An initialization vector to feed as the first block to AES.
   uint8_t iv_[AES_BLOCK_SIZE];
+
+  AES_CIPHER_MODE mode_;
 };
 }
 

@@ -16,7 +16,6 @@
 // under the License.
 
 #include "util/openssl-util.h"
-#include <dlfcn.h>
 #include <limits.h>
 #include <sstream>
 
@@ -149,9 +148,8 @@ const EVP_CIPHER* EVP_aes_256_ctr();
 }
 
 const EVP_CIPHER* EncryptionKey::getCipher() const {
-  // if CTR is supported, use CTR mode
   // use weak symbol to avoid compiling error on OpenSSL 1.0.0 environment
-  if (EVP_aes_256_ctr) {
+  if (cipher_ == AES_256_CTR && EVP_aes_256_ctr) {
     return EVP_aes_256_ctr();
   }
   // otherwise, fall back to CFB mode
