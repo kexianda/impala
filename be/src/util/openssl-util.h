@@ -83,9 +83,8 @@ class EncryptionKey {
   Status Decrypt(const uint8_t* data, int64_t len, uint8_t* out) const WARN_UNUSED_RESULT;
 
   /// By default it is AES_256_CTR, if CTR is not support, fallback to CFB mode.
-  /// provide flexibility, we can specify a mode for testing,
-  /// or in future we can provide a configuration option for the user who
-  /// can choose a mode(CFB,CTR,GCM...) based on their software/hardware.
+  /// provide flexibility, in future we can provide a configuration option for 
+  /// the user who can choose a mode(CFB,CTR,GCM...) based on their software/hardware.
   void setCipherMode(AES_CIPHER_MODE m) { mode_ = m; }
 
  private:
