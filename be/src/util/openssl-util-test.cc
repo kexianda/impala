@@ -83,17 +83,23 @@ TEST_F(OpenSSLUtilTest, EncryptInPlace) {
   vector<uint8_t> original(buffer_size);
   vector<uint8_t> scratch(buffer_size); // Scratch buffer for in-place encryption.
 
-  GenerateRandomData(original.data(), buffer_size);
-  memcpy(scratch.data(), original.data(), buffer_size);
-
   EncryptionKey key;
-  key.InitializeRandom();
-  ASSERT_OK(key.Encrypt(scratch.data(), buffer_size, scratch.data()));
-  // Check that encryption did something
-  ASSERT_NE(0, memcmp(original.data(), scratch.data(), buffer_size));
-  ASSERT_OK(key.Decrypt(scratch.data(), buffer_size, scratch.data()));
-  // Check that we get the original data back.
-  ASSERT_EQ(0, memcmp(original.data(), scratch.data(), buffer_size));
+  // Check both CTR & CFB
+  AES_CIPHER_MODE modes[] = {AES_256_CTR, AES_256_CFB};
+  for (auto m : modes) {
+    GenerateRandomData(original.data(), buffer_size);
+    memcpy(scratch.data(), original.data(), buffer_size);
+
+    key.InitializeRandom();
+    key.setCipherMode(m);
+
+    ASSERT_OK(key.Encrypt(scratch.data(), buffer_size, scratch.data()));
+    // Check that encryption did something
+    ASSERT_NE(0, memcmp(original.data(), scratch.data(), buffer_size));
+    ASSERT_OK(key.Decrypt(scratch.data(), buffer_size, scratch.data()));
+    // Check that we get the original data back.
+    ASSERT_EQ(0, memcmp(original.data(), scratch.data(), buffer_size));
+  }
 }
 
 /// Test that encryption works with buffer lengths that don't fit in a 32-bit integer.
